@@ -8,8 +8,12 @@ public class Controller : MonoBehaviour {
 	public int AngleInDegrees;
 	[Tooltip("Desired Forward speed of the Character")]
 	public float ForwardSpeed;
+	private float CurrentForwardSpeed=0;
+	private float SpeedingEffect;
 	//Is the Player pressing tap?
 	private bool bool_tap = false;
+	[HideInInspector]
+	public bool isDead = false;
 
 	//This holds the information on Tail Parts of the Arrow
 	[HideInInspector]
@@ -22,6 +26,12 @@ public class Controller : MonoBehaviour {
 	public Transform tailHolder;
 
 	void Awake(){
+		//We want the character to speed up in first two seconds to its desired speed
+		//Fixed Update Function runs 50 times a second by default, and if the timestamp is set to 0.02
+		//50 * 2 = 100, we will have the character up to its desired speed in two seconds
+		SpeedingEffect = ForwardSpeed / 100;
+
+
 		AddTail ();
 		AddTail ();
 		AddTail ();
@@ -29,16 +39,22 @@ public class Controller : MonoBehaviour {
 		AddTail ();
 	}
 
-	//Physics based computations goes in here
+	//Physics based calculation goes in here
 	void FixedUpdate(){
+		if (CurrentForwardSpeed < ForwardSpeed)
+			DoSpeedingEffect();
 		MoveForward ();
 		ChangeDirection ();
+	}
+
+	private void DoSpeedingEffect(){
+		CurrentForwardSpeed += SpeedingEffect;
 	}
 
 	//Character always moves forward
 	private void MoveForward(){
 		//TODO: Put this inside if gameplay condition
-		transform.position += transform.up * ForwardSpeed * Time.deltaTime;
+		transform.position += transform.up * CurrentForwardSpeed * Time.deltaTime;
 	}
 
 	//Character always moves forward
@@ -78,15 +94,6 @@ public class Controller : MonoBehaviour {
 		return Angle;
 	}
 
-
-	void OnTriggerEnter(Collider Other){
-		if (Other.CompareTag("Collectible")) {
-			//TODO: Increment Score
-			//TODO: Add Tail for visual representation if neccessary
-			//TODO: Destroy Collectibe
-		}
-	}
-
 	//Adds tail object to the Character's Head (Arrow)
 	void AddTail(){
 		if (tailParts.Count == 0)
@@ -98,4 +105,33 @@ public class Controller : MonoBehaviour {
 		tailParts.Add (theTailPart.transform);
 	}
 
+	void OnTriggerEnter2D(Collider2D other){
+		//TODO: Handle collisions over here
+		if (other.CompareTag("Collectible")) {
+			//TODO: Increment Score
+			//TODO: Add Tail for visual representation (ony if neccessary)
+			//TODO: Destroy Collectibe
+			Destroy(other.transform.gameObject);
+		}
+		else if (other.CompareTag("Gem")) {
+			//TODO: Increment Gem Collection
+			//TODO: Destroy Gem
+			Destroy(other.transform.gameObject);
+		}
+		else if (other.CompareTag("Wall")) {
+			Die();
+		}
+		else if (other.CompareTag("SpawnNew")) {
+			EndlessScroller.Instance.SpawnNextPrefab ();
+		}
+	}
+
+	public void Die(){
+		//Kill the head
+		transform.gameObject.SetActive (false);
+		//Kill the rest of the tail parts
+		for (int i = 0; i < tailParts.Count; i++) {
+			tailParts [i].transform.gameObject.SetActive (false);
+		}
+	}
 }
