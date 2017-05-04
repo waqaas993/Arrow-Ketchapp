@@ -14,10 +14,14 @@ public class Controller : MonoBehaviour {
 	private bool bool_tap = false;
 	[HideInInspector]
 	public bool isDead = false;
+	//Keeps track of active Tail Part Game Objects
+	private int TailCount;
 
 	//This holds the information on Tail Parts of the Arrow
 	[HideInInspector]
 	public List<Transform> tailParts = new List<Transform> ();
+	//Maximum Tail pool count for visual represtation
+	public int TailPoolCount;
 
 	//Useful data members for adding Tail objects to Character's Head (Arrow)
 	private Vector3 currentPos;
@@ -25,26 +29,42 @@ public class Controller : MonoBehaviour {
 	public GameObject tailPrefab;
 	public Transform tailHolder;
 
+	private static Controller instance;
+	public static Controller Instance{
+		get {return instance;}
+	}
+
 	void Awake(){
+		instance = this;
 		//We want the character to speed up in first two seconds to its desired speed
 		//Fixed Update Function runs 50 times a second by default, and if the timestamp is set to 0.02
 		//50 * 2 = 100, we will have the character up to its desired speed in two seconds
 		SpeedingEffect = ForwardSpeed / 100;
+		for (int i = 0; i < TailPoolCount; i++) {
+			//Instantiating all the 15 tail parts in the begining, and then later setting them active and deactive
+			//This optimization technique is called object pooling 
+			InstantiateTail ();
+			tailParts [i].transform.gameObject.SetActive (false);
+		}
+	}
 
-
-		AddTail ();
-		AddTail ();
-		AddTail ();
-		AddTail ();
-		AddTail ();
+	public void Init(){
+		CurrentForwardSpeed = 0;
+		TailCount = 0;
+		bool_tap = false;
+		transform.position = new Vector3 (0,-5,0);
+		transform.eulerAngles = new Vector3 (0, 0, -AngleInDegrees);
+		transform.gameObject.SetActive (true);
 	}
 
 	//Physics based calculation goes in here
 	void FixedUpdate(){
-		if (CurrentForwardSpeed < ForwardSpeed)
-			DoSpeedingEffect();
-		MoveForward ();
-		ChangeDirection ();
+		if (EventsManager.Instance.CurrentScreen == (int)GameState.Gameplay) {
+			if (CurrentForwardSpeed < ForwardSpeed)
+				DoSpeedingEffect();
+			MoveForward ();
+			ChangeDirection ();
+		}
 	}
 
 	private void DoSpeedingEffect(){
@@ -59,7 +79,6 @@ public class Controller : MonoBehaviour {
 
 	//Character always moves forward
 	private void ChangeDirection(){
-		//TODO: Put this inside if gameplay condition
 		if (bool_tap) {
 			transform.eulerAngles = new Vector3 (0, 0, Mathf.Lerp (FetchAngle(transform.rotation.eulerAngles.z),AngleInDegrees,Time.deltaTime*6));
 		}
@@ -94,8 +113,8 @@ public class Controller : MonoBehaviour {
 		return Angle;
 	}
 
-	//Adds tail object to the Character's Head (Arrow)
-	void AddTail(){
+	//Instantiates tail object to the Character's Head (Arrow) on load time
+	void InstantiateTail(){
 		if (tailParts.Count == 0)
 			currentPos = transform.position;		
 		else
@@ -105,21 +124,30 @@ public class Controller : MonoBehaviour {
 		tailParts.Add (theTailPart.transform);
 	}
 
+	void AddTail(){
+		tailParts [TailCount].transform.position = (TailCount == 0) ? transform.position : tailParts [TailCount-1].transform.position;
+		tailParts [TailCount].transform.gameObject.SetActive (true);
+		TailCount++;
+	}
+
+
 	void OnTriggerEnter2D(Collider2D other){
-		//TODO: Handle collisions over here
 		if (other.CompareTag("Collectible")) {
-			//TODO: Increment Score
-			//TODO: Add Tail for visual representation (ony if neccessary)
-			//TODO: Destroy Collectibe
-			Destroy(other.transform.gameObject);
+			Gamedata.Instance.SetScore (1);
+			if (TailCount < TailPoolCount)
+				AddTail ();
+			AudioManager.Instance.PlayCollectible();
+			other.transform.gameObject.SetActive(false);
 		}
 		else if (other.CompareTag("Gem")) {
-			//TODO: Increment Gem Collection
-			//TODO: Destroy Gem
-			Destroy(other.transform.gameObject);
+			Gamedata.Instance.SetGems (1);
+			AudioManager.Instance.PlayGem ();
+			other.transform.gameObject.SetActive(false);
 		}
 		else if (other.CompareTag("Wall")) {
+			AudioManager.Instance.PlayGameover ();
 			Die();
+			EventsManager.Instance.DisplayGameover ();
 		}
 		else if (other.CompareTag("SpawnNew")) {
 			EndlessScroller.Instance.SpawnNextPrefab ();
