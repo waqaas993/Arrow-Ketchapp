@@ -16,6 +16,7 @@ public class Controller : MonoBehaviour {
 	public bool isDead = false;
 	//Keeps track of active Tail Part Game Objects
 	private int TailCount;
+	public GameObject TheParticlesss;
 
 	//This holds the information on Tail Parts of the Arrow
 	[HideInInspector]
@@ -73,7 +74,6 @@ public class Controller : MonoBehaviour {
 
 	//Character always moves forward
 	private void MoveForward(){
-		//TODO: Put this inside if gameplay condition
 		transform.position += transform.up * CurrentForwardSpeed * Time.deltaTime;
 	}
 
@@ -133,14 +133,17 @@ public class Controller : MonoBehaviour {
 
 	void OnTriggerEnter2D(Collider2D other){
 		if (other.CompareTag("Collectible")) {
-			Gamedata.Instance.SetScore (1);
+			TheParticlesss.SetActive (false);
+			TheParticlesss.transform.position = other.transform.transform.position;
+			TheParticlesss.SetActive (true);
+			Gamedata.Instance.AddScore (1);
 			if (TailCount < TailPoolCount)
 				AddTail ();
 			AudioManager.Instance.PlayCollectible();
 			other.transform.gameObject.SetActive(false);
 		}
 		else if (other.CompareTag("Gem")) {
-			Gamedata.Instance.SetGems (1);
+			Gamedata.Instance.AddGems (1);
 			AudioManager.Instance.PlayGem ();
 			other.transform.gameObject.SetActive(false);
 		}

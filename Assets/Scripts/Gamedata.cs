@@ -15,31 +15,42 @@ public class Gamedata : MonoBehaviour {
 	public int Gems;
 	[HideInInspector]
 	public int Score;
+	[HideInInspector]
+	public int GamePlayedCount;
 
 	void Awake(){
 		instance = this;
-		if (PlayerPrefs.HasKey("BestScore") && PlayerPrefs.HasKey("Gems")) {
+		if (PlayerPrefs.HasKey("BestScore") && PlayerPrefs.HasKey("Gems") && PlayerPrefs.HasKey("GamePlayedCount")) {
 			BestScore = PlayerPrefs.GetInt ("BestScore");
 			Gems = PlayerPrefs.GetInt ("Gems");
+			GamePlayedCount = PlayerPrefs.GetInt ("GamePlayedCount");
 		} else {
 			BestScore = 0;
 			PlayerPrefs.SetInt ("BestScore",BestScore);
 			Gems = 0;
 			PlayerPrefs.SetInt ("Gems",Gems);
+			GamePlayedCount = 0;
+			PlayerPrefs.SetInt ("GamePlayedCount",GamePlayedCount);
 		}
 	}
+
+	public void AddGamePlayedCount(int GamePlayedCount){
+		this.GamePlayedCount += GamePlayedCount;
+		PlayerPrefs.SetInt ("GamePlayedCount",this.GamePlayedCount);
+	}
+
 
 	public void SetBestScore(int BestScore){
 		this.BestScore = BestScore;
 		PlayerPrefs.SetInt ("BestScore",this.BestScore);
 	}
 
-	public void SetGems(int Gems){
+	public void AddGems(int Gems){
 		this.Gems += Gems;
 		PlayerPrefs.SetInt ("BestScore",this.Gems);
 	}
 
-	public void SetScore(int Score){
+	public void AddScore(int Score){
 		this.Score += Score;
 		EventsManager.Instance.UpdateScore (this.Score);
 	}

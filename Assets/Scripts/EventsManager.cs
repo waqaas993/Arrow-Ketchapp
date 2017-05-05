@@ -28,6 +28,7 @@ public class EventsManager : MonoBehaviour {
 	[Header("Elements from Gameplay Screen")]
 	public Text gameplayScore;
 	public Animator ScoreAnim;
+	public GameObject TutorialText;
 
 	private static EventsManager instance;
 	public static EventsManager Instance{
@@ -38,13 +39,16 @@ public class EventsManager : MonoBehaviour {
 		instance = this;
 		CurrentScreen = (int)GameState.Gameover;
 		DisplayGameplay ();
-//		Init ();
 	}
 
 	public void Init(){
 		Score.text = EmptyString;
 		TotalGems.text = EmptyString;
-		gameplayScore.text = EmptyString;
+		gameplayScore.text = 0.ToString ();
+		if (Gamedata.Instance.GamePlayedCount < 3) {
+			TutorialText.SetActive (true);
+			Invoke ("DisableTutorialText", 5);
+		}
 	}
 
 	public void DisplayGameover(){
@@ -57,12 +61,17 @@ public class EventsManager : MonoBehaviour {
 			BestScore.text = Gamedata.Instance.BestScore.ToString ();
 			TotalGems.text = Gamedata.Instance.Gems.ToString ();
 			Gameover.SetActive (true);
+			//In case the player died within 3 second
+			if (Gamedata.Instance.GamePlayedCount < 3)
+				CancelInvoke ("DisableTutorialText");
+			Gamedata.Instance.AddGamePlayedCount(1);
 		}
 	}
 
 	//Restart On Click listener
 	public void DisplayGameplay(){
 		if (CurrentScreen == (int)GameState.Gameover ) {
+			//Initialize everything to make it go back to its default states
 			this.Init ();
 			AudioManager.Instance.Init ();
 			Controller.Instance.Init ();
@@ -70,14 +79,18 @@ public class EventsManager : MonoBehaviour {
 			EndlessScroller.Instance.Init ();
 			CurrentScreen = (int)GameState.Gameplay;
 			Gameover.SetActive (false);
-			Score.text = Gamedata.Instance.Score.ToString ();
 			Gameplay.SetActive (true);
 		}
 	}
 
-	//TODO: Also play the animation over here
 	public void UpdateScore(int Score){
 		gameplayScore.text = Score.ToString();
+		//Using Mecanim (Unity's built-in animation system) for punching scale of the Score Text
+		ScoreAnim.SetTrigger ("Scale");
 	}
-		
+
+	//For disabling the in-game tutorial text
+	public void DisableTutorialText(){
+		TutorialText.SetActive (false);
+	}
 }
