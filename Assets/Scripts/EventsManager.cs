@@ -77,6 +77,7 @@ public class EventsManager : MonoBehaviour {
 			Controller.Instance.Init ();
 			Gamedata.Instance.Init ();
 			EndlessScroller.Instance.Init ();
+			CameraFollow.Instance.Init ();
 			CurrentScreen = (int)GameState.Gameplay;
 			Gameover.SetActive (false);
 			Gameplay.SetActive (true);
